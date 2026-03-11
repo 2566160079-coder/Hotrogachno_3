@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   List, 
   Download, 
@@ -24,11 +24,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+
+
 export const CauHinhNgoaiLe: React.FC = () => {
-  const [selectedRuleId, setSelectedRuleId] = useState<number>(1);
+  const [selectedRuleId, setSelectedRuleId] = useState<number | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>("Hoàn thành");
+  const [rules, setRules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
   // Form state for exception configuration
   const [ruleName, setRuleName] = useState("");
@@ -37,10 +41,35 @@ export const CauHinhNgoaiLe: React.FC = () => {
     { id: Date.now() + 1, field: "Diễn giải", operator: "chứa", value: "PHIDUYTRI", logic: "AND" }
   ]);
 
-  const rules = [
-    { id: 1, name: 'Ngoại lệ lọc phí ngân hàng', status: 'Hiệu lực', active: true },
-    { id: 2, name: 'Ngoại lệ gạch nợ tiền thừa', status: 'Không hiệu lực', active: false },
-  ];
+  useEffect(() => {
+    fetch('/api/exception-rules')
+      .then(res => res.json())
+      .then(data => {
+        const mappedRules = data.map((r: any) => ({
+          id: r.id,
+          name: r.description || r.keyword,
+          status: r.status === 'ACTIVE' ? 'Hiệu lực' : 'Không hiệu lực',
+          active: r.status === 'ACTIVE',
+          keyword: r.keyword,
+          type: r.type,
+          target_id: r.target_id
+        }));
+        setRules(mappedRules);
+        if (mappedRules.length > 0) {
+          setSelectedRuleId(mappedRules[0].id);
+          setRuleName(mappedRules[0].name);
+        }
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3b82f6]"></div>
+      </div>
+    );
+  }
 
   const handleReset = () => {
     setRuleName("");

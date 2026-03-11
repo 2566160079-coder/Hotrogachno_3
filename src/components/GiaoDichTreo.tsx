@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -21,73 +21,45 @@ interface GiaoDichTreoProps {
   onSelectProcess: () => void;
 }
 
+
+
 export const GiaoDichTreo: React.FC<GiaoDichTreoProps> = ({ onSelectProcess }) => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [importStep, setImportStep] = useState(1); 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const transactions = [
-    { 
-      id: 1, 
-      ref: 'FT2301045582', 
-      date: '15/10/2023', 
-      amount: '50.000.000', 
-      account: '0011004321987',
-      name: 'NGUYEN VAN A',
-      bank: 'Vietcombank', 
-      description: 'Chuyển tiền thanh toán hóa đơn dịch vụ tháng 10 cho đối tác vận chuyển',
-      time: '10:30:15',
-      user: 'Tran Thi B',
-      status: 'Chờ xử lý',
-      hangNote: 'Lỗi timeout kết nối',
-      processNote: 'Đang kiểm tra'
-    },
-    { 
-      id: 2, 
-      ref: 'FT2301045583', 
-      date: '15/10/2023', 
-      amount: '125.500.000', 
-      account: '0451000123456',
-      name: 'CONG TY TNHH ABC',
-      bank: 'BIDV', 
-      description: 'Thanh toán hợp đồng kinh tế số 123/HDKT/2023 về việc cung cấp thiết bị văn phòng',
-      time: '11:15:20',
-      user: 'Le Van C',
-      status: 'Chờ xử lý',
-      hangNote: 'Sai số tài khoản đích',
-      processNote: 'Chờ xác nhận'
-    },
-    { 
-      id: 3, 
-      ref: 'FT2301045584', 
-      date: '15/10/2023', 
-      amount: '1.200.000', 
-      account: '1903345566778',
-      name: 'PHAM THI D',
-      bank: 'Techcombank', 
-      description: 'Chuyển khoản nội bộ cá nhân phục vụ chi tiêu cá nhân cuối tuần',
-      time: '14:45:00',
-      user: 'Tran Thi B',
-      status: 'Đang xử lý',
-      hangNote: 'Hệ thống bảo trì',
-      processNote: 'Chưa xử lý'
-    },
-    { 
-      id: 4, 
-      ref: 'FT2301045595', 
-      date: '16/10/2023', 
-      amount: '340.000.000', 
-      account: '0121000654321',
-      name: 'TẬP ĐOÀN VIỄN THÔNG A',
-      bank: 'VietinBank', 
-      description: 'Quyết toán kinh phí dự án hạ tầng mạng quý 3/2023 chi tiết theo phụ lục 01',
-      time: '08:20:05',
-      user: 'Nguyen Van D',
-      status: 'Đang xử lý',
-      hangNote: 'Trùng số tham chiếu',
-      processNote: 'Đang đối soát'
-    },
-  ];
+  useEffect(() => {
+    fetch('/api/transactions?status=ON_HOLD')
+      .then(res => res.json())
+      .then(data => {
+        setTransactions(data.map((tx: any) => ({
+          id: tx.id,
+          ref: tx.ref,
+          date: tx.date,
+          amount: tx.amount.toLocaleString(),
+          account: tx.account,
+          name: tx.name,
+          bank: tx.bank,
+          description: tx.description,
+          time: '10:30:15',
+          user: 'Tran Thi B',
+          status: 'Chờ xử lý',
+          hangNote: tx.note || 'Lỗi hệ thống',
+          processNote: 'Chưa xử lý'
+        })));
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#19355c]"></div>
+      </div>
+    );
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -229,7 +201,7 @@ export const GiaoDichTreo: React.FC<GiaoDichTreoProps> = ({ onSelectProcess }) =
         {/* Pagination */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <div className="text-sm text-slate-500">
-            Hiển thị <span className="font-medium text-slate-700">1 - 4</span> trên <span className="font-medium text-slate-700">24</span> kết quả
+            Hiển thị <span className="font-medium text-slate-700">1 - {transactions.length}</span> trên <span className="font-medium text-slate-700">{transactions.length}</span> kết quả
           </div>
           <div className="flex items-center gap-1">
             <button className="w-8 h-8 flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-400 hover:text-[#19355c] transition-colors">

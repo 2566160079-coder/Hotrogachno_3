@@ -15,14 +15,24 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
+import { useState, useEffect } from 'react';
+
 export const Dashboard: React.FC = () => {
+  const [data, setData] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/dashboard-stats')
+      .then(res => res.json())
+      .then(setData);
+  }, []);
+
   const stats = [
-    { label: 'Tổng giao dịch trong ngày', value: '1,250', trend: '+5.2%', icon: Download, color: 'blue' },
-    { label: 'Chưa xử lý', value: '150', trend: '-2.1%', icon: Hourglass, color: 'orange' },
-    { label: 'Đang xử lý', value: '85', trend: '+1.5%', icon: RefreshCw, color: 'indigo' },
-    { label: 'Hoàn thành', value: '980', trend: '+8.4%', icon: CheckCircle2, color: 'green' },
-    { label: 'Treo', value: '35', trend: '0.0%', icon: AlertCircle, color: 'red' },
-    { label: 'Tổng tiền đã gạch nợ', value: '45.2 tỷ', trend: '+12.3%', icon: CreditCard, color: 'primary', dark: true },
+    { label: 'Tổng giao dịch', value: data?.total?.toLocaleString() || '0', trend: '+5.2%', icon: Download, color: 'blue' },
+    { label: 'Chưa xử lý', value: data?.pending?.toLocaleString() || '0', trend: '-2.1%', icon: Hourglass, color: 'orange' },
+    { label: 'Đang xử lý', value: data?.processing?.toLocaleString() || '0', trend: '+1.5%', icon: RefreshCw, color: 'indigo' },
+    { label: 'Hoàn thành', value: data?.processed?.toLocaleString() || '0', trend: '+8.4%', icon: CheckCircle2, color: 'green' },
+    { label: 'Treo', value: data?.onHold?.toLocaleString() || '0', trend: '0.0%', icon: AlertCircle, color: 'red' },
+    { label: 'Tổng tiền đã gạch nợ', value: `${((data?.totalAmount || 0) / 1000000000).toFixed(2)} tỷ`, trend: '+12.3%', icon: CreditCard, color: 'primary', dark: true },
   ];
 
   return (
@@ -113,10 +123,10 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="w-full space-y-2">
               {[
-                { label: 'Hoàn thành', value: '65%', color: 'bg-green-500' },
-                { label: 'Đang xử lý', value: '15%', color: 'bg-[#19355c]' },
-                { label: 'Chưa xử lý', value: '10%', color: 'bg-amber-500' },
-                { label: 'Đang treo', value: '10%', color: 'bg-red-500' },
+                { label: 'Hoàn thành', value: data?.total ? `${((data.processed / data.total) * 100).toFixed(0)}%` : '0%', color: 'bg-green-500' },
+                { label: 'Đang xử lý', value: data?.total ? `${((data.processing / data.total) * 100).toFixed(0)}%` : '0%', color: 'bg-[#19355c]' },
+                { label: 'Chưa xử lý', value: data?.total ? `${((data.pending / data.total) * 100).toFixed(0)}%` : '0%', color: 'bg-amber-500' },
+                { label: 'Đang treo', value: data?.total ? `${((data.onHold / data.total) * 100).toFixed(0)}%` : '0%', color: 'bg-red-500' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2">

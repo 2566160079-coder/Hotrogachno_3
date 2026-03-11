@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   LineChart, 
   Line, 
@@ -69,26 +69,59 @@ const dailyData = [
   { date: '22/10', total: 390, completed: 382, pending: 8, amount: '985,400,000 đ' },
 ];
 
-export const BaoCao: React.FC = () => {
-  const [exportTypeEmp, setExportTypeEmp] = React.useState<'summary' | 'detail'>('summary');
-  const [exportTypeDay, setExportTypeDay] = React.useState<'summary' | 'detail'>('summary');
 
-  const parseAmount = (amountStr: string) => parseInt(amountStr.replace(/[^\d]/g, '') || '0');
+
+export const BaoCao: React.FC = () => {
+  const [exportTypeEmp, setExportTypeEmp] = useState<'summary' | 'detail'>('summary');
+  const [exportTypeDay, setExportTypeDay] = useState<'summary' | 'detail'>('summary');
+  const [employeeData, setEmployeeData] = useState<any[]>([]);
+  const [dailyData, setDailyData] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      fetch('/api/reports/employee').then(res => res.json()),
+      fetch('/api/reports/daily').then(res => res.json()),
+      fetch('/api/dashboard-stats').then(res => res.json())
+    ]).then(([emp, day, stat]) => {
+      setEmployeeData(emp);
+      setDailyData(day);
+      setStats(stat);
+      setLoading(false);
+    });
+  }, []);
+
   const formatAmount = (amount: number) => new Intl.NumberFormat('vi-VN').format(amount) + ' đ';
 
   const employeeTotals = employeeData.reduce((acc, row) => ({
     total: acc.total + row.total,
     completed: acc.completed + row.completed,
     pending: acc.pending + row.pending,
-    amount: acc.amount + parseAmount(row.amount)
+    amount: acc.amount + row.amount
   }), { total: 0, completed: 0, pending: 0, amount: 0 });
 
   const dailyTotals = dailyData.reduce((acc, row) => ({
     total: acc.total + row.total,
     completed: acc.completed + row.completed,
     pending: acc.pending + row.pending,
-    amount: acc.amount + parseAmount(row.amount)
+    amount: acc.amount + row.amount
   }), { total: 0, completed: 0, pending: 0, amount: 0 });
+
+  const pieData = [
+    { name: 'Hoàn thành', value: stats?.processed || 0, color: '#10b981' },
+    { name: 'Đang xử lý', value: stats?.processing || 0, color: '#19355c' },
+    { name: 'Chưa xử lý', value: stats?.pending || 0, color: '#f59e0b' },
+    { name: 'Đang treo', value: stats?.onHold || 0, color: '#ef4444' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#19355c]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-10">
@@ -172,7 +205,7 @@ export const BaoCao: React.FC = () => {
                     <div className="size-2 rounded-full" style={{ backgroundColor: item.color }}></div>
                     <span className="text-slate-600">{item.name}</span>
                   </div>
-                  <span className="font-bold">{((item.value / 1250) * 100).toFixed(0)}%</span>
+                  <span className="font-bold">{stats?.total > 0 ? ((item.value / stats.total) * 100).toFixed(0) : 0}%</span>
                 </div>
               ))}
             </div>

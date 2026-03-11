@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -17,14 +17,40 @@ interface RoLuuTruProps {
   onSelectProcess?: () => void;
 }
 
+
+
 export const RoLuuTru: React.FC<RoLuuTruProps> = ({ onSelectProcess }) => {
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const transactions = [
-    { id: 1, ref: 'REF001', date: '20/10/2023', amount: '+10,000,000', acc: '123456789', name: 'Nguyễn Văn A', bank: 'Vietcombank', desc: 'Thanh toán cước viễn thông tháng 10/2023 cho các thuê bao gia đình khu vực Hà Nội', status: 'Chờ xử lý', user: 'Chưa phân công' },
-    { id: 2, ref: 'REF002', date: '20/10/2023', amount: '+5,500,000', acc: '987654321', name: 'Trần Thị B', bank: 'Techcombank', desc: 'Thanh toán hóa đơn internet định kỳ tháng 10. Giao dịch qua cổng thanh toán NAPAS.', status: 'Đang xử lý', user: 'Lê Văn C' },
-    { id: 3, ref: 'REF003', date: '19/10/2023', amount: '+2,000,000', acc: '456123789', name: 'Công ty X', bank: 'BIDV', desc: 'Chuyển tiền thanh toán hợp đồng cung cấp dịch vụ phần mềm quản lý doanh nghiệp ERP.', status: 'Chờ xử lý', user: 'Chưa phân công' },
-  ];
+  useEffect(() => {
+    fetch('/api/transactions?status=PENDING')
+      .then(res => res.json())
+      .then(data => {
+        setTransactions(data.map((tx: any) => ({
+          id: tx.id,
+          ref: tx.ref,
+          date: tx.date,
+          amount: `+${tx.amount.toLocaleString()}`,
+          acc: tx.account,
+          name: tx.name,
+          bank: tx.bank,
+          desc: tx.description,
+          status: 'Chờ xử lý',
+          user: 'Chưa phân công'
+        })));
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#19355c]"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
@@ -151,7 +177,7 @@ export const RoLuuTru: React.FC<RoLuuTruProps> = ({ onSelectProcess }) => {
           </table>
         </div>
         <div className="px-6 py-4 bg-slate-50 flex items-center justify-between border-t border-slate-200">
-          <p className="text-sm text-slate-500">Đang hiển thị <span className="font-medium text-slate-900">1 - 3</span> trên <span className="font-medium text-slate-900">45</span> giao dịch</p>
+          <p className="text-sm text-slate-500">Đang hiển thị <span className="font-medium text-slate-900">1 - {transactions.length}</span> trên <span className="font-medium text-slate-900">{transactions.length}</span> giao dịch</p>
           <div className="flex items-center gap-2">
             <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:bg-white disabled:opacity-50" disabled>
               <ChevronLeft size={18} />
