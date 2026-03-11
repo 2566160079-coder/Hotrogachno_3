@@ -1,0 +1,5 @@
+{
+  "name": "Chương trình hỗ trợ gạch nợ",
+  "description": "Chương trình quản lý và gạch nợ cước viễn thông từ sổ phụ ngân hàng",
+  "requestFramePermissions": []
+}
